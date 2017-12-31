@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv bash
+
+# setup directories
+mkdir -p /mosquitto/{config,data,log};
+[[ ! -f /mosquitto/config/mosquitto.conf ]] && cp /defaults/mosquitto.conf.default /mosquitto/config/mosquitto.conf;
+
+# setup password file with defaults
+USERNAME="${USERNAME:-mosquitto}";
+PASSWORD="${PASSWORD:-insecurebydefault}";
+
+[[ ! -f /mosquitto/config/.passwd ]] && touch /mosquitto/config/.passwd;
+mosquitto_passwd -b /mosquitto/config/.passwd "${USERNAME}" "${PASSWORD}"
+
+chown -R mosquitto:mosquitto /mosquitto/;
+

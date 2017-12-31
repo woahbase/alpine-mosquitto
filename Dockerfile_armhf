@@ -1,0 +1,22 @@
+ARG ARCH=frommakefile
+ARG DOCKERSRC=frommakefile
+ARG USERNAME=frommakefile
+#
+FROM ${USERNAME}/${DOCKERSRC}:${ARCH}
+#
+ARG PUID=1001
+ARG PGID=1001
+#
+RUN set -xe \
+    && addgroup -g ${PGID} -S mosquitto \
+    && adduser -u ${PUID} -G mosquitto -h /mosquitto/ -D mosquitto \
+    && apk add --no-cache --purge -uU mosquitto mosquitto-libs mosquitto-clients \
+    && rm -rf /var/cache/apk/* /tmp/*
+#
+COPY root/ /
+#
+VOLUME /mosquitto/
+#
+EXPOSE 1883 8883 8884 8080 8081
+#
+ENTRYPOINT ["/init"]
