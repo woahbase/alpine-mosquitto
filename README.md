@@ -1,10 +1,10 @@
-[![Build Status](https://travis-ci.org/woahbase/alpine-mosquitto?branch=master)](https://travis-ci.org/woahbase/alpine-mosquitto)
+[![Build Status](https://travis-ci.org/woahbase/alpine-mosquitto.svg?branch=master)](https://travis-ci.org/woahbase/alpine-mosquitto)
 
-[![](https://images.microbadger.com/badges/image/woahbase/alpine-mosquitto)](https://microbadger.com/images/woahbase/alpine-mosquitto)
+[![](https://images.microbadger.com/badges/image/woahbase/alpine-mosquitto.svg)](https://microbadger.com/images/woahbase/alpine-mosquitto)
 
-[![](https://images.microbadger.com/badges/commit/woahbase/alpine-mosquitto)](https://microbadger.com/images/woahsbase/alpine-mosquitto)
+[![](https://images.microbadger.com/badges/commit/woahbase/alpine-mosquitto.svg)](https://microbadger.com/images/woahsbase/alpine-mosquitto)
 
-[![](https://images.microbadger.com/badges/version/woahbase/alpine-mosquitto)](https://microbadger.com/images/woahbase/alpine-mosquitto)
+[![](https://images.microbadger.com/badges/version/woahbase/alpine-mosquitto.svg)](https://microbadger.com/images/woahbase/alpine-mosquitto)
 
 ## Alpine-Mosquitto
 #### Container for Alpine Linux + Mosquitto (MQTT)
