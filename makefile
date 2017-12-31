@@ -82,7 +82,7 @@ stop :
 	docker stop -t 2 docker_$(SVCNAME)
 
 test :
-	docker run --rm -it $(NAMEFLAGS) $(RUNFLAGS) $(PORTFLAGS) $(MOUNTFLAGS) $(OTHERFLAGS) $(IMAGETAG) sh -ec 'mosquitto -h'
+	docker run --rm -it $(NAMEFLAGS) $(RUNFLAGS) $(PORTFLAGS) $(MOUNTFLAGS) $(OTHERFLAGS) $(IMAGETAG) sh -ec 'mosquitto -h | grep -e "\(MQTT\|version\)"'
 
 testsub :
 	docker exec -it docker_$(SVCNAME) $(SHCOMMAND) -c "mosquitto_sub -h localhost -t '#' -u 'mosquitto' -P 'insecurebydefault'"
