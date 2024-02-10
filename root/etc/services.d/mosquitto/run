@@ -1,5 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-cd /mosquitto || exit 1;
-
-s6-setuidgid mosquitto exec mosquitto -c /mosquitto/config/mosquitto.conf

@@ -1,0 +1,29 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+# setup directories
+mkdir -p /mosquitto/{config,data,log};
+
+# ensure mosquitto conf exists
+if [ ! -f /mosquitto/config/mosquitto.conf ];
+then
+    cp /defaults/mosquitto.conf /mosquitto/config/mosquitto.conf;
+fi;
+
+# ensure passwd file exists
+if [ ! -f /mosquitto/config/.passwd ];
+then
+    # setup password file with defaults, if not exists
+    USERNAME="${USERNAME:-mosquitto}";
+    PASSWORD="${PASSWORD:-insecurebydefault}";
+
+    touch /mosquitto/config/.passwd;
+    mosquitto_passwd -b /mosquitto/config/.passwd "${USERNAME}" "${PASSWORD}"
+fi;
+
+chown -R ${S6_USER:-alpine} \
+    /mosquitto/ \
+    ;
+
+chown ${S6_USER:-alpine}:users /mosquitto/config/.passwd;
+chmod 0700 /mosquitto/config/.passwd;

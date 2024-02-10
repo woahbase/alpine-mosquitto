@@ -1,0 +1,10 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+cd /mosquitto || exit 1;
+
+MOSQUITTO_ARGS="${MOSQUITTO_ARGS:- -c /mosquitto/config/mosquitto.conf}";
+
+s6-setuidgid alpine exec \
+    mosquitto \
+    ${MOSQUITTO_ARGS}
