@@ -1,29 +1,87 @@
 #!/usr/bin/with-contenv bash
 set -e
 
+vecho () { if [ "${S6_VERBOSITY:-1}" -gt 0 ]; then echo "[$0] $@"; fi; }
+
+MOSQUITTO_CONFDIR="${MOSQUITTO_CONFDIR:-/mosquitto/config}";
+MOSQUITTO__persistence_location="${MOSQUITTO__persistence_location:-/mosquitto/data}";
+
 # setup directories
-mkdir -p /mosquitto/{config,data,log};
+vecho "Ensure configuration directories exist";
+mkdir -p \
+    ${MOSQUITTO_CONFDIR} \
+    ${MOSQUITTO__persistence_location} \
+    ;
 
 # ensure mosquitto conf exists
-if [ ! -f /mosquitto/config/mosquitto.conf ];
+if [ ! -f "${MOSQUITTO_CONFDIR}/mosquitto.conf" ];
 then
-    cp /defaults/mosquitto.conf /mosquitto/config/mosquitto.conf;
+    vecho "Setting up default configuration as ${MOSQUITTO_CONFDIR}/mosquitto.conf";
+    # cp /defaults/mosquitto.conf ${MOSQUITTO_CONFDIR}/mosquitto.conf;
+    # update
+    #   default user e.g. alpine
+    #   paths that refer to confdir e.g. password_file
+    sed \
+        -e "s|S6_USER|$S6_USER|g" \
+        -e "s|MOSQUITTO_CONFDIR|$MOSQUITTO_CONFDIR|g" \
+        /defaults/mosquitto.conf > ${MOSQUITTO_CONFDIR}/mosquitto.conf;
+
+    # set mosquitto configuration from environment vars i.e. /run/s6/container_environment/MOSQUITTO__<varname> (double underscores)
+    # only if custom configuration does not exist
+    if find /run/s6/container_environment/MOSQUITTO__* -maxdepth 1 > /dev/null 2>&1; then
+        for FILENAME in /run/s6/container_environment/*;
+        do
+            if [[ "${FILENAME##*/}" == "MOSQUITTO__"* ]];
+            then
+                BASENAME="${FILENAME##*/}";
+                VAR=${BASENAME//MOSQUITTO__/};
+                VAL="$(cat ${FILENAME})";
+                sed -i -e "s|^#\?${VAR} \?.*\$|$VAR $VAL|" ${MOSQUITTO_CONFDIR}/mosquitto.conf;
+                vecho "Set ${VAR} from ${BASENAME} in ${MOSQUITTO_CONFDIR}/mosquitto.conf";
+            fi;
+        done;
+    fi;
+fi;
+
+MOSQUITTO__log_dest="${MOSQUITTO__log_dest:-stderr}";
+# ensure logfile exists if log_dest is set to "file /path/to/file.log"
+if [ -n "${MOSQUITTO__log_dest}" ] \
+&& [[ "${MOSQUITTO__log_dest}" = "file"* ]];
+then
+    # fp="${MOSQUITTO__log_dest//file /}";
+    fp="$(echo ${MOSQUITTO__log_dest} | awk '{print $2}')";
+    vecho "Ensure logfile exists: $fp";
+    mkdir -p $(dirname $fp);
+    touch $fp;
+    chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
+        $(dirname $fp) \
+        $fp \
+        ;
 fi;
 
 # ensure passwd file exists
-if [ ! -f /mosquitto/config/.passwd ];
+MOSQUITTO__password_file="${MOSQUITTO__password_file:-${MOSQUITTO_CONFDIR}/.passwd}";
+if [ ! -f "${MOSQUITTO__password_file}" ];
 then
     # setup password file with defaults, if not exists
+    vecho "Ensure default authorised user exists";
     USERNAME="${USERNAME:-mosquitto}";
     PASSWORD="${PASSWORD:-insecurebydefault}";
 
-    touch /mosquitto/config/.passwd;
-    mosquitto_passwd -b /mosquitto/config/.passwd "${USERNAME}" "${PASSWORD}"
+    mkdir -p $(dirname ${MOSQUITTO__password_file});
+    touch ${MOSQUITTO__password_file};
+    chmod 0700 ${MOSQUITTO__password_file};
+    mosquitto_passwd -b ${MOSQUITTO__password_file} "${USERNAME}" "${PASSWORD}";
 fi;
 
-chown -R ${S6_USER:-alpine} \
-    /mosquitto/ \
+# fix permissions
+vecho "Fixing permissions.";
+chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
+    ${MOSQUITTO_CONFDIR} \
+    ${MOSQUITTO__persistence_location} \
+    $(dirname ${MOSQUITTO__password_file}) \
     ;
 
-chown ${S6_USER:-alpine}:users /mosquitto/config/.passwd;
-chmod 0700 /mosquitto/config/.passwd;
+# fix permissions on password
+chown ${S6_USER:-alpine}:${S6_USER:-alpine} ${MOSQUITTO__password_file};
+chmod 0700 ${MOSQUITTO__password_file};
