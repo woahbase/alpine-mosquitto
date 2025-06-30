@@ -50,13 +50,16 @@ if [ -n "${MOSQUITTO__log_dest}" ] \
 then
     # fp="${MOSQUITTO__log_dest//file /}";
     fp="$(echo ${MOSQUITTO__log_dest} | awk '{print $2}')";
-    vecho "Ensure logfile exists: $fp";
+    vecho "Ensure logfile exists: ${fp}";
     mkdir -p $(dirname $fp);
     touch $fp;
-    chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
-        $(dirname $fp) \
-        $fp \
-        ;
+    if [ "X${EUID}" == "X0" ]; # requires root
+    then
+        chown -R ${S6_USER:-alpine}:${PGID:-1000} \
+            $(dirname $fp) \
+            $fp \
+            ;
+    fi;
 fi;
 
 # ensure passwd file exists
@@ -75,13 +78,17 @@ then
 fi;
 
 # fix permissions
-vecho "Fixing permissions.";
-chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
-    ${MOSQUITTO_CONFDIR} \
-    ${MOSQUITTO__persistence_location} \
-    $(dirname ${MOSQUITTO__password_file}) \
-    ;
+if [ -z "${MOSQUITTO_SKIP_PERMFIX}" ] \
+&& [ "X${EUID}" == "X0"  ]; # requires root
+then
+    vecho "Fixing permissions.";
+    chown -R ${S6_USER:-alpine}:${PGID:-1000} \
+        ${MOSQUITTO_CONFDIR} \
+        ${MOSQUITTO__persistence_location} \
+        $(dirname ${MOSQUITTO__password_file}) \
+        ;
 
-# fix permissions on password
-chown ${S6_USER:-alpine}:${S6_USER:-alpine} ${MOSQUITTO__password_file};
-chmod 0700 ${MOSQUITTO__password_file};
+    # fix permissions on password
+    chown ${S6_USER:-alpine}:${PGID:-1000} ${MOSQUITTO__password_file};
+    chmod 0700 ${MOSQUITTO__password_file};
+fi;

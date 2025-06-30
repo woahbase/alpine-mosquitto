@@ -1,12 +1,14 @@
 #!/usr/bin/with-contenv bash
 set -e
 
-cd /mosquitto || exit 1; # must exist
+usercmd () { if [ "X${EUID}" != "X0" ]; then $@; else s6-setuidgid ${PUID:-1000}:${PGID:-1000} $@; fi; }
 
 MOSQUITTO_CONFDIR="${MOSQUITTO_CONFDIR:-/mosquitto/config}";
 MOSQUITTO_ARGS="${MOSQUITTO_ARGS:- -c ${MOSQUITTO_CONFDIR}/mosquitto.conf}";
 
-s6-setuidgid ${S6_USER:-alpine} \
+cd /mosquitto || exit 1; # must exist
+
+usercmd \
 exec \
     mosquitto \
     ${MOSQUITTO_ARGS} \
